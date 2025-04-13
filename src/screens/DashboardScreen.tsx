@@ -1,40 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text, Button, StyleSheet, Alert, ScrollView} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
-import axios from 'axios';
-
+import {useGetProfileQuery} from '../redux/slices/profileSlice';
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
   const navigation = useNavigation();
-  const [profile, setProfile] = useState(null);
-
-  // Fetch user data from AsyncStorage or your state management (e.g., context)
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userData = await AsyncStorage.getItem('userId');
-        const token = await AsyncStorage.getItem('authToken');
-
-        const res = await axios.get('http://10.0.2.2:5000/api/profile-info', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        console.log('userData', userData, res);
-        setProfile(res.data.data);
-        if (userData && userData?.length > 0) {
-          setUser(userData);
-        } else {
-          Alert.alert('No user data found');
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchUserData();
-  }, []);
+  const {data: profileData, isLoading, isError, error} = useGetProfileQuery();
 
   // Logout function
   const handleLogout = async () => {
@@ -47,52 +17,58 @@ const Dashboard = () => {
       Alert.alert('Failed to log out');
     }
   };
+  if (isLoading) {
+    return (
+      <View style={styles.centered}>
+        <Text>Loading profile...</Text>
+      </View>
+    );
+  }
 
-  //   const {name = 'N/A', email = 'N/A', userDetails = {}} = profile;
-  //   const {
-  //     address = 'N/A',
-  //     pincode = 'N/A',
-  //     mobileNumber = 'N/A',
-  //     occupation = 'N/A',
-  //     age = 'N/A',
-  //     sex = 'N/A',
-  //   } = userDetails;
+  if (isError) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>Failed to load profile</Text>
+        <Text>{error?.data?.message || 'Please try again later.'}</Text>
+      </View>
+    );
+  }
+
+  const {data} = profileData;
+  console.log('data===>', data);
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>👤 User Profile</Text>
 
       <View style={styles.card}>
         <Text style={styles.label}>Name:</Text>
-        <Text style={styles.value}>{profile?.name || 'N/A'}</Text>
+        <Text style={styles.value}>{data?.name || 'N/A'}</Text>
 
         <Text style={styles.label}>Email:</Text>
-        <Text style={styles.value}>{profile?.email}</Text>
+        <Text style={styles.value}>{data?.email}</Text>
 
         <Text style={styles.label}>Address:</Text>
-        <Text style={styles.value}>
-          {profile?.userDetails?.address || 'N/A'}
-        </Text>
+        <Text style={styles.value}>{data?.userDetails?.address || 'N/A'}</Text>
 
         <Text style={styles.label}>Pincode:</Text>
-        <Text style={styles.value}>
-          {profile?.userDetails?.pincode || 'N/A'}
-        </Text>
+        <Text style={styles.value}>{data?.userDetails?.pincode || 'N/A'}</Text>
 
         <Text style={styles.label}>Mobile Number:</Text>
         <Text style={styles.value}>
-          {profile?.userDetails?.mobileNumber || 'N/A'}
+          {data?.userDetails?.mobileNumber || 'N/A'}
         </Text>
 
         <Text style={styles.label}>Occupation:</Text>
         <Text style={styles.value}>
-          {profile?.userDetails?.occupation || 'N/A'}
+          {data?.userDetails?.occupation || 'N/A'}
         </Text>
 
         <Text style={styles.label}>Age:</Text>
-        <Text style={styles.value}>{profile?.userDetails?.age || 'N/A'}</Text>
+        <Text style={styles.value}>{data?.userDetails?.age || 'N/A'}</Text>
 
         <Text style={styles.label}>Sex:</Text>
-        <Text style={styles.value}>{profile?.userDetails?.sex || 'N/A'}</Text>
+        <Text style={styles.value}>{data?.userDetails?.sex || 'N/A'}</Text>
       </View>
     </ScrollView>
   );

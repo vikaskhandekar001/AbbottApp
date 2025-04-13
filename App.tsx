@@ -28,9 +28,13 @@ import AccountScreen from './src/screens/AccountsScreen';
 import CustomHeader from './src/components/CustomHeader';
 import ApiCallComponent from './src/components/ApiCall';
 import Dashboard from './src/screens/DashboardScreen';
-
+// import ReactotronConfig from './ ReactotronConfig';
 const Stack = createNativeStackNavigator();
 const Tab = createMaterialTopTabNavigator();
+
+if (__DEV__) {
+  require('./ReactotronConfig');
+}
 
 function MyTabs() {
   return (

@@ -13,47 +13,52 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useLoginMutation, useSignupMutation} from '../redux/slices/authSlices';
 
 const NetInfo = (): React.JSX.Element => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [login] = useLoginMutation(); // Use the generated mutation hook
+  const [signup, {isLoading, isError, error}] = useSignupMutation(); // Use the generated mutation hook
 
   const apiUrl = 'http://10.0.2.2:5000'; // Android Emulator
 
   const handleSignup = async () => {
     try {
-      const res = await axios.post(`${apiUrl}/api/auth/signup`, {
-        email,
-        password,
-      });
+      // const res = await axios.post(`${apiUrl}/api/auth/signup`, {
+      //   email,
+      //   password,
+      // });
+      const res = await signup({email, password}).unwrap(); // unwrap to get data directly
+
       console.log('✅ Signup response:', res);
 
-      if (res?.data?.status === 'success') {
-        await AsyncStorage.setItem('userId', res?.data?.data?.userId);
-        await AsyncStorage.setItem('authToken', res.data?.data?.token);
-        Alert.alert('Signed up successfully', res?.data?.data?.userId);
+      if (res?.status === 'success') {
+        await AsyncStorage.setItem('userId', res?.data?.userId);
+        await AsyncStorage.setItem('authToken', res?.data?.token);
+        Alert.alert('Signed up successfully', res?.data?.userId);
       }
     } catch (err) {
+      console.log('error', err);
       console.log('error', err.response);
-      Alert.alert(err?.message || 'An error occurred during signup.');
+      Alert.alert(err?.data?.message || 'An error occurred during signup.');
     }
   };
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post(`${apiUrl}/api/auth/login`, {
-        email,
-        password,
-      });
+      const res = await login({email, password}).unwrap(); // unwrap to directly get the data
+
       console.log('Login Response: ', res);
 
-      await AsyncStorage.setItem('userId', res?.data?.userId);
-      await AsyncStorage.setItem('authToken', res?.data?.accessToken);
-      await AsyncStorage.setItem('refreshToken', res?.data?.refreshToken);
+      await AsyncStorage.setItem('userId', res?.userId);
+      await AsyncStorage.setItem('authToken', res?.accessToken);
+      await AsyncStorage.setItem('refreshToken', res?.refreshToken);
 
       navigation.navigate('Dashboard');
     } catch (err) {
+      console.log('Login Error:', err);
       console.log('Login Error:', err?.response);
       Alert.alert('Login failed', err?.response?.data?.error || err?.message);
     }
